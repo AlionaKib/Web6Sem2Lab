@@ -38,7 +38,7 @@ public class StudentClient {
 
             FileReader fr = new FileReader(file);
             this.sl = new StudentList();
-            this.sl.readStudent(fr);
+            this.sl.read(fr);
             //System.out.println(this.sl.toString());
             StudentList sl2 = ss.sortStudentList(this.sl);
             //System.out.println(sl2.toString());
@@ -49,7 +49,7 @@ public class StudentClient {
             file = new File(fileName);
 
             FileWriter fw = new FileWriter(file);
-            sl.writeStudent(fw);
+            sl.write(fw);
             fw.close();
         } catch (MalformedURLException e) {
             e.printStackTrace();

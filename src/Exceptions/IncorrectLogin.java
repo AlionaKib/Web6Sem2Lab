@@ -5,6 +5,6 @@ public class IncorrectLogin extends Exception {
     }
 
     public IncorrectLogin(String message) {
-        super(message);
+        super("Incorrect login");
     }
 }

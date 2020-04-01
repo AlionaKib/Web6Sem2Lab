@@ -17,6 +17,18 @@ public class StudentList implements Serializable {
         return groupID;
     }
 
+    public void setGroupID(int groupID) {
+        this.groupID = groupID;
+    }
+
+    public void setStudentArrayList(ArrayList<Student> studentArrayList) {
+        this.studentArrayList = studentArrayList;
+    }
+
+    public ArrayList<Student> getStudentArrayList(){
+        return this.studentArrayList;
+    }
+
     public int getStudentsCount() {
         return studentArrayList.size();
     }
@@ -37,20 +49,24 @@ public class StudentList implements Serializable {
         studentArrayList.remove(student);
     }
 
-    public void writeStudent (Writer out){
+    public void write (Writer out) {
+        PrintWriter p = new PrintWriter(out);
+        p.println(groupID);
         for (Student stud: studentArrayList) {
-            stud.writeStudent(out);
+            stud.write(out);
         }
         //System.out.println("Writing done");
     }
 
-    public void readStudent (Reader in){   //не фурычит
+    public void read (Reader in){   //не фурычит
         StreamTokenizer in1 = new StreamTokenizer(in);
         Student stud;
         try {
+            in1.nextToken();
+            groupID = (int)in1.nval;
         while (in1.nextToken() != StreamTokenizer.TT_EOF){
             stud = new Student();
-            stud.readStudent(in1);
+            stud.read(in1);
             studentArrayList.add(stud);
             }
         } catch (IOException e) {

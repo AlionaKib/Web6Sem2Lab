@@ -10,7 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-public class Student implements Serializable {
+public class Student implements Serializable{
     private String name;
     private int idCardNumber;
     private String graduateSubscript;
@@ -20,7 +20,7 @@ public class Student implements Serializable {
     }
 
     public Student(String name, int idCardNumber, String graduateSubscript, double averagePoint) throws WrongAveragePoint, IOException {
-        if(!(isDigits(name)) && wordsCount(name)==3)
+        if(wordsCount(name)==3)
             this.name = name;
         else
             throw new IOException("Wrong name"); //some comment
@@ -29,7 +29,7 @@ public class Student implements Serializable {
 
         this.graduateSubscript = graduateSubscript;
 
-        if(averagePoint>0 && averagePoint<=5)
+        if(averagePoint>=0 && averagePoint<=5)
             this.averagePoint = averagePoint;
         else
             throw new WrongAveragePoint("WrongAveragePoint");
@@ -87,7 +87,7 @@ public class Student implements Serializable {
             throw new WrongAveragePoint("WrongAveragePoint");
     }
 
-    public void writeStudent (Writer out){
+    public void write (Writer out){
         PrintWriter p = new PrintWriter(out);
         p.println(this.getName());
         p.println(this.getAveragePoint());
@@ -96,7 +96,7 @@ public class Student implements Serializable {
         //System.out.println("Writing done");
     }
 
-    public void readStudent (StreamTokenizer in){   //не фурычит
+    public void read (StreamTokenizer in){
         String name = "";
         int idCardNumber;
         String graduateSubscript;
@@ -124,12 +124,7 @@ public class Student implements Serializable {
 
     @Override
     public String toString() {
-        return "Student{" +
-                "name='" + name + '\'' +
-                ", idCardNumber=" + idCardNumber +
-                ", graduateSubscript='" + graduateSubscript + '\'' +
-                ", averagePoint=" + averagePoint +
-                '}';
+        return idCardNumber+",'"+name+"',"+"'"+graduateSubscript+"',"+averagePoint;
     }
 
     
