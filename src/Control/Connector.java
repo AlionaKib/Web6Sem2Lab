@@ -98,7 +98,7 @@ public class Connector {
         String script = "create table "+TEACHER_TABLE+" (" +
                 TEACHER_ID +" number(8,0) primary key not null," +
                 "Name varchar(50) not null," +
-                "Login varchar(30) not null," +
+                "Login varchar(30) not null unique," +
                 "Password varchar(30) not null" +
                 ")";
 
@@ -194,7 +194,7 @@ public class Connector {
         return addObjectIntoTable(STUDENTS_TABLE, Integer.toString(stud.getIdCardNumber()), "'"+stud.getName()+"'","null", "'"+stud.getGraduateSubscript()+"'", Double.toString(stud.getAveragePoint()));
     }
 
-    public boolean addTeacherInBase(Teacher teacher) throws SQLException, NoElementInBase, SameIndex {
+    public boolean addTeacherAtBase(Teacher teacher) throws SQLException, NoElementInBase, SameIndex {
         ResultSet result = statement.executeQuery("select * from "+TEACHER_TABLE+" where "+TEACHER_ID+"="+ teacher.getId());
         if(result.next()) throw new SameIndex("There is teacher with same id in base");
 
@@ -254,53 +254,79 @@ public class Connector {
         return statement.executeQuery(select).next();
     }
 
-    public ArrayList<StudentList> getGroupsByTeacherId(int id) throws NoElementInBase, SQLException, IOException {
-        /*ResultSet result = statement.executeQuery("select * from "+TEACHER_TABLE+" where "+TEACHER_ID+"="+ id);
-        if(!result.next()) throw new NoElementInBase("There is no teacher with id in base");*/
+    public ArrayList<StudentList> getGroupsByTeacherId(int id) throws NoElementInBase, SQLException, IOException, WrongAveragePoint {
+        ResultSet result = statement.executeQuery("select * from "+TEACHER_TABLE+" where "+TEACHER_ID+"="+ id);
+        if(!result.next()) throw new NoElementInBase("There is no teacher with id in base");
 
-        ResultSet resultTeach = statement.executeQuery("select "+GROUP_ID+", PRESIDENT from (select * from "+TEACHERGROUP_TABLE+" where "+TEACHER_ID+"="+ id+") inner join "+GROUPS_TABLE+" using("+GROUP_ID+")");
+        ResultSet resultTeach = statement.executeQuery("select * from (select * from "+TEACHERGROUP_TABLE+" where "+TEACHER_ID+" = "+id+") left join "+STUDENTS_TABLE+" using ("+GROUP_ID+")");
         ArrayList<StudentList> list = new ArrayList<StudentList>();
         StudentList group;
+        int n;
+        int k;
         while(resultTeach.next()){
             group = new StudentList();
-            group.setGroupID(resultTeach.getInt(1));
-            //group.setStudent(getStudentById(result2.getInt(2)));
-            group.setStudentArrayList(getStudentsByGroupId(group.getGroupID()));
+            n=resultTeach.getInt(1);
+            group.setGroupID(n);
+            if(resultTeach.getInt(3)!=0)
+                group.setStudent(new Student(resultTeach.getString(4), resultTeach.getInt(3), resultTeach.getString(5), resultTeach.getDouble(6)));
+            while(resultTeach.next() && resultTeach.getInt(1)==n)
+                if(resultTeach.getInt(3)!=0)
+                    group.setStudent(new Student(resultTeach.getString(4), resultTeach.getInt(3), resultTeach.getString(5), resultTeach.getDouble(6)));
             list.add(group);
         }
         return list;
     }
 
-    public ArrayList<Student> getStudentsByGroupId(int id) throws SQLException, NoElementInBase, IOException {
-        /*ResultSet result = statement.executeQuery("select * from "+GROUPS_TABLE+" where "+GROUP_ID+"="+  id);
-        if(!result.next()) throw new NoElementInBase("There is no group with id cadr in base");*/
+    public ArrayList<Student> getStudentsByGroupId(int id) throws SQLException, NoElementInBase, IOException, WrongAveragePoint {
+        ResultSet result = statement.executeQuery("select * from "+GROUPS_TABLE+" where "+GROUP_ID+"="+ id);
+        if(!result.next()) throw new NoElementInBase("There is no group with id in base");
 
-        ResultSet resultGroup = statement.executeQuery("select "+STUDENT_ID+" from "+STUDENTS_TABLE+" inner join "+GROUPS_TABLE+" using ("+GROUP_ID+") where "+GROUP_ID+"="+  id);
+        ResultSet resultGroup = statement.executeQuery("select * from "+STUDENTS_TABLE+" where "+GROUP_ID+" = "+id);
         ArrayList<Student> list = new ArrayList<>();
-        Student stud;
         while(resultGroup.next()){
-            stud = getStudentById(resultGroup.getInt(1));
-            list.add(stud);
+            list.add(new Student(resultGroup.getString(2), resultGroup.getInt(1), resultGroup.getString(4), resultGroup.getDouble(5)));
         }
         return list;
     }
 
-    public Student getStudentById(int id) throws NoElementInBase, SQLException {
-       /* ResultSet result = statement.executeQuery("select * from "+STUDENTS_TABLE+" where "+STUDENT_ID+"="+ id);
-        if(!result.next()) throw new NoElementInBase("There is no student with id cadr in base");*/
-
+    public Student getStudentById(int id) throws NoElementInBase, SQLException, IOException, WrongAveragePoint {
         ResultSet resultStud = statement.executeQuery("select * from "+STUDENTS_TABLE+" where "+STUDENT_ID+"="+ id);
+        if(!resultStud.next()) throw new NoElementInBase("There is no student with id in base");
+
         Student stud = new Student();
-        try {
-            if( resultStud.next()) {
-                stud.setIdCardNumber( resultStud.getInt(1));
-                stud.setName( resultStud.getString(2));
-                stud.setGraduateSubscript( resultStud.getString(4));
-                stud.setAveragePoint( resultStud.getDouble(5));
-            }
-        } catch (WrongAveragePoint | IOException wrongAveragePoint) {
-            wrongAveragePoint.printStackTrace();
-        }
+        stud.setIdCardNumber( resultStud.getInt(1));
+        stud.setName( resultStud.getString(2));
+        stud.setGraduateSubscript( resultStud.getString(4));
+        stud.setAveragePoint( resultStud.getDouble(5));
+
         return stud;
+    }
+
+    public Teacher getTeacherById(int id) throws NoElementInBase, SQLException {
+        ResultSet resultTeach = statement.executeQuery("select * from "+TEACHER_TABLE+" where "+TEACHER_ID+"="+ id);
+        if(!resultTeach.next()) throw new NoElementInBase("There is no teacher with id in base");
+
+        Teacher teacher = new Teacher();
+        teacher.setId(id);
+        teacher.setName(resultTeach.getString(2));
+        teacher.setLogin(resultTeach.getString(3));
+        teacher.setPassword(resultTeach.getString(4));
+
+        return teacher;
+    }
+
+    public ArrayList<Teacher> getTeachersByStudentId(int id) throws NoElementInBase, SQLException, IOException {
+        ResultSet resultStud = statement.executeQuery("select * from "+STUDENTS_TABLE+" where "+STUDENT_ID+"="+ id);
+        if(!resultStud.next()) throw new NoElementInBase("There is no student with id in base");
+
+        ResultSet resultTeacher = statement.executeQuery("select "+TEACHER_ID+", NAME, LOGIN, PASSWORD from "+TEACHER_TABLE+" left join "+TEACHERGROUP_TABLE+" using ("+TEACHER_ID+") where "+GROUP_ID+" in (select "+GROUP_ID+" from "+STUDENTS_TABLE+" where "+STUDENT_ID+"="+id+')');
+        ArrayList<Teacher> list = new ArrayList<>();
+        Teacher teacher;
+        while(resultTeacher.next()){
+            teacher = new Teacher(resultTeacher.getString(2),resultTeacher.getString(3),resultTeacher.getString(4));
+            teacher.setId(resultTeacher.getInt(1));
+            list.add(teacher);
+        }
+        return list;
     }
 }

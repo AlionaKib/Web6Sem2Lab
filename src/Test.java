@@ -13,21 +13,39 @@ import java.sql.SQLException;
 
 public class Test {
     public static void main(String[] args) {
-        //CreateFiles();
+        //-------------------------
+        //Создание файлов для заполнения базы данных
+        CreateFiles();
         //ReadStudentsFiles("Group1.txt","Group2.txt","Group3.txt","Group4.txt","Group5.txt","Group6.txt","Group7.txt","Group8.txt","Group9.txt","Group10.txt");
         //ReadTeachersFiles("Teacher1.txt","Teacher2.txt","Teacher3.txt","Teacher4.txt","Teacher5.txt");
+        //-------------------------
 
+        //-------------------------
+        //Создание соединения и работа с базой данных
         Connector dbConnector = null;
         try{
             dbConnector = new Connector();
+
+            //зачистка старой и создание новой реляционной модели
             dbConnector.createSchema();
+
+            //заполнение новой базы данных данными из файлов
             dbConnector.fillStudentsBaseFromFiles("Group1.txt","Group2.txt","Group3.txt","Group4.txt","Group5.txt","Group6.txt","Group7.txt","Group8.txt","Group9.txt","Group10.txt");
             dbConnector.fillTeachersBaseFromFiles("Teacher1.txt","Teacher2.txt","Teacher3.txt","Teacher4.txt","Teacher5.txt");
+            //добавлене нового элемента в таблицу
             dbConnector.addStudentAtBase(new Student("Kibitkina A S",101,"GragKib", 4.5), 6);
-            Teacher teach = new Teacher();
-            teach.setStudentLists(dbConnector.getGroupsByTeacherId(2));
-            teach.setId(2);
-            System.out.println(teach.getGroupsCount());
+
+            //тесты выполнения запросов
+            System.out.println("Groups by 5 techer:"); //получение списка групп по идентификатору преподавателя
+            System.out.println(dbConnector.getGroupsByTeacherId(5).toString()+'\n');
+            System.out.println("Students by 10 group:");  //получения списка студентов по идентификатору группы
+            System.out.println(dbConnector.getStudentsByGroupId(10).toString()+'\n');
+            System.out.println("Student by 15 id:");//получение студента по его идентификатору
+            System.out.println(dbConnector.getStudentById(15).toString()+'\n');
+            System.out.println("Teacher by 5 id:");//получние преподавателя по его идентификатору
+            System.out.println(dbConnector.getTeacherById(5).toString()+'\n');
+            System.out.println("Teachers by 15 student:");//получение списка преподавателей по идентификатору студента
+            System.out.println(dbConnector.getTeachersByStudentId(15).toString()+'\n');
         }catch (SQLException | IOException | WrongAveragePoint e) {
             e.printStackTrace();
         } catch (SameIndex sameIndex) {
