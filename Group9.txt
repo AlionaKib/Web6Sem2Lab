@@ -1,0 +1,33 @@
+9
+Name80 Surname80 Middlename80
+1.06
+Graduate80
+80
+Name81 Surname81 Middlename81
+3.61
+Graduate81
+81
+Name82 Surname82 Middlename82
+4.33
+Graduate82
+82
+Name83 Surname83 Middlename83
+0.62
+Graduate83
+83
+Name84 Surname84 Middlename84
+0.83
+Graduate84
+84
+Name85 Surname85 Middlename85
+0.34
+Graduate85
+85
+Name86 Surname86 Middlename86
+4.98
+Graduate86
+86
+Name87 Surname87 Middlename87
+0.4
+Graduate87
+87

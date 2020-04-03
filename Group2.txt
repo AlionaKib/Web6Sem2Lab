@@ -1,0 +1,33 @@
+2
+Name10 Surname10 Middlename10
+2.03
+Graduate10
+10
+Name11 Surname11 Middlename11
+2.32
+Graduate11
+11
+Name12 Surname12 Middlename12
+0.64
+Graduate12
+12
+Name13 Surname13 Middlename13
+4.89
+Graduate13
+13
+Name14 Surname14 Middlename14
+3.55
+Graduate14
+14
+Name15 Surname15 Middlename15
+4.93
+Graduate15
+15
+Name16 Surname16 Middlename16
+3.7
+Graduate16
+16
+Name17 Surname17 Middlename17
+4.25
+Graduate17
+17

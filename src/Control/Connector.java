@@ -6,19 +6,15 @@ import Exceptions.WrongAveragePoint;
 import Model.Client.Student;
 import Model.Client.StudentList;
 import Model.Client.Teacher;
-import com.sun.xml.internal.ws.util.StringUtils;
 
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.UUID;
+
 
 public class Connector {
     private static final String CONNECTION_URL = "jdbc:oracle:thin:@localhost:1521:XE";
