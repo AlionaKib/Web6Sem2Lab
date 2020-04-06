@@ -1,33 +1,33 @@
 7
 Name60 Surname60 Middlename60
-1.7
+1.82
 Graduate60
 60
 Name61 Surname61 Middlename61
-2.82
+3.43
 Graduate61
 61
 Name62 Surname62 Middlename62
-3.71
+2.87
 Graduate62
 62
 Name63 Surname63 Middlename63
-3.85
+3.63
 Graduate63
 63
 Name64 Surname64 Middlename64
-4.06
+2.29
 Graduate64
 64
 Name65 Surname65 Middlename65
-1.14
+1.89
 Graduate65
 65
 Name66 Surname66 Middlename66
-0.37
+4.17
 Graduate66
 66
 Name67 Surname67 Middlename67
-3.77
+2.05
 Graduate67
 67

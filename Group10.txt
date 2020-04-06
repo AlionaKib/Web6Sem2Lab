@@ -1,33 +1,33 @@
 10
 Name90 Surname90 Middlename90
-3.36
+1.87
 Graduate90
 90
 Name91 Surname91 Middlename91
-4.63
+3.64
 Graduate91
 91
 Name92 Surname92 Middlename92
-1.76
+2.14
 Graduate92
 92
 Name93 Surname93 Middlename93
-4.22
+2.57
 Graduate93
 93
 Name94 Surname94 Middlename94
-0.26
+1.96
 Graduate94
 94
 Name95 Surname95 Middlename95
-3.35
+3.5
 Graduate95
 95
 Name96 Surname96 Middlename96
-4.43
+0.56
 Graduate96
 96
 Name97 Surname97 Middlename97
-3.36
+1.06
 Graduate97
 97

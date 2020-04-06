@@ -1,33 +1,33 @@
 1
 Name00 Surname00 Middlename00
-2.3
+2.9
 Graduate00
 0
 Name01 Surname01 Middlename01
-4.6
+4.69
 Graduate01
 1
 Name02 Surname02 Middlename02
-4.89
+4.62
 Graduate02
 2
 Name03 Surname03 Middlename03
-3.68
+0.97
 Graduate03
 3
 Name04 Surname04 Middlename04
-3.38
+2.96
 Graduate04
 4
 Name05 Surname05 Middlename05
-3.91
+0.02
 Graduate05
 5
 Name06 Surname06 Middlename06
-1.91
+2.69
 Graduate06
 6
 Name07 Surname07 Middlename07
-1.06
+0.81
 Graduate07
 7

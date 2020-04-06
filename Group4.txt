@@ -1,33 +1,33 @@
 4
 Name30 Surname30 Middlename30
-1.74
+4.44
 Graduate30
 30
 Name31 Surname31 Middlename31
-3.28
+1.49
 Graduate31
 31
 Name32 Surname32 Middlename32
-1.16
+4.91
 Graduate32
 32
 Name33 Surname33 Middlename33
-0.68
+1.43
 Graduate33
 33
 Name34 Surname34 Middlename34
-0.28
+3.61
 Graduate34
 34
 Name35 Surname35 Middlename35
-3.27
+2.02
 Graduate35
 35
 Name36 Surname36 Middlename36
-1.82
+0.87
 Graduate36
 36
 Name37 Surname37 Middlename37
-2.69
+3.14
 Graduate37
 37

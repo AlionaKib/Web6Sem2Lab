@@ -29,17 +29,17 @@ public class Connector {
     private static final String GROUP_ID = "GROUPID";
     private static final String TEACHER_ID = "ID";
 
-    private static final String SELECT_SCRIPT_TEMPLATE = "select * from %s where %s = %s;";
+    private final static String  ADD_DATA_SQL     =
+            "begin sql_package.addData(?,?); end;";
 
     private final Connection connection;
-    private final Statement statement;
 
     public Connector() throws SQLException {
         try {
             Class.forName("oracle.jdbc.driver.OracleDriver");
             Locale.setDefault(Locale.ENGLISH);
             connection = DriverManager.getConnection(CONNECTION_URL, USERNAME, PASSWORD);
-            statement = connection.createStatement();
+            connection.setAutoCommit(false);
             System.out.println("Connection as "+USERNAME + " successful");
         } catch (SQLException | ClassNotFoundException e) {
             closeConnection();
@@ -48,26 +48,35 @@ public class Connector {
     }
 
     public void closeConnection() throws SQLException {
-        statement.close();
         connection.close();
     }
 
-    public boolean createSchema() throws SQLException {
-        createGroupsTable();
-        System.out.println("Table " + GROUPS_TABLE + " created");
-        createStudentsTable();
-        System.out.println("Table " + STUDENTS_TABLE + " created");
-        createTeachersTable();
-        System.out.println("Table " + TEACHER_TABLE + " created");
-        createTeachersGroupsTable();
-        System.out.println("Table " + TEACHERGROUP_TABLE + " created");
-        return true;
+    public void createSchema() throws SQLException {
+        createTables();
+        System.out.println("Tables " + GROUPS_TABLE +" and "+STUDENTS_TABLE+" and "+TEACHERGROUP_TABLE+" and "+TEACHER_TABLE+ " created");
     }
 
-    private boolean createStudentsTable() throws SQLException {
-        dropTable(STUDENTS_TABLE);
 
-        String script = "create table "+ STUDENTS_TABLE +"(" +
+    private boolean executeScript(String script) throws SQLException {
+        PreparedStatement preparedStatement = connection.prepareStatement(script);
+        boolean resultExecution = preparedStatement.execute();
+        preparedStatement.close();
+
+        return resultExecution;
+    }
+
+
+    private void createTables() throws SQLException {
+        dropTable(GROUPS_TABLE);
+        dropTable(STUDENTS_TABLE);
+        dropTable(TEACHER_TABLE);
+        dropTable(TEACHERGROUP_TABLE);
+
+        String scriptGroups = "create table " + GROUPS_TABLE + "  (" +
+                GROUP_ID +" NUMBER(8,0) primary key not null, " +
+                "PRESIDENT  NUMBER(8,0)" +
+                ")";
+        String scriptStudents = "create table "+ STUDENTS_TABLE +"(" +
                 STUDENT_ID + " number(8,0) primary key not null," +
                 "Name varchar(50) not null," +
                 GROUP_ID+" number(8,0)," +
@@ -75,63 +84,57 @@ public class Connector {
                 "averagePoint number (3,2) check (averagePoint>=0 and averagePoint<=5)," +
                 "foreign key ("+GROUP_ID+") references "+ GROUPS_TABLE +" ("+GROUP_ID+")" +
                 ")";
-        return statement.execute(script);
-    }
-
-    private boolean createGroupsTable() throws SQLException {
-        dropTable(GROUPS_TABLE);
-
-        String script = "create table " + GROUPS_TABLE + "  (" +
-                GROUP_ID +" NUMBER(8,0) primary key not null, " +
-                "PRESIDENT  NUMBER(8,0)" +
-                ")" ;
-        return statement.execute(script);
-    }
-
-    private boolean createTeachersTable() throws SQLException {
-        dropTable(TEACHER_TABLE);
-
-        String script = "create table "+TEACHER_TABLE+" (" +
+        String scriptTeachers = "create table "+TEACHER_TABLE+" (" +
                 TEACHER_ID +" number(8,0) primary key not null," +
                 "Name varchar(50) not null," +
                 "Login varchar(30) not null unique," +
                 "Password varchar(30) not null" +
                 ")";
-
-        return statement.execute(script);
-    }
-
-    private boolean createTeachersGroupsTable() throws SQLException {
-        dropTable(TEACHERGROUP_TABLE);
-
-        String script = "create table " + TEACHERGROUP_TABLE + "  (" +
+        String scriptTeacherGroups = "create table " + TEACHERGROUP_TABLE + "  (" +
                 GROUP_ID+" NUMBER(8,0) not null, " +
                 TEACHER_ID +"  NUMBER(8,0) not null," +
                 "foreign key ("+TEACHER_ID+") references "+TEACHER_TABLE+"("+TEACHER_ID+")," +
                 "foreign key ("+GROUP_ID+") references "+ GROUPS_TABLE +"(" +GROUP_ID+")" +
                 ")" ;
+        Statement statement = connection.createStatement();
+        statement.addBatch(scriptGroups);
+        statement.addBatch(scriptStudents);
+        statement.addBatch(scriptTeachers);
+        statement.addBatch(scriptTeacherGroups);
 
-        return statement.execute(script);
+        statement.executeBatch();
+        statement.close();
+        connection.commit();
     }
 
-    private void dropTable(String tableName) throws SQLException {
+
+    private boolean dropTable(String tableName) throws SQLException {
         DatabaseMetaData metaData = connection.getMetaData();
         ResultSet tablesResultSet = metaData.getTables(null, null, tableName, null);
-        if (!tablesResultSet.next()) return;
+        if (!tablesResultSet.next()) return true;
 
-        statement.execute(String.format("DROP Table %s cascade constraints", tableName));
-        System.out.println("Table " + tableName + " droped");
+        return executeScript(String.format("DROP Table %s cascade constraints", tableName));
+    }
+
+    private String getParams(String ... params){
+        return String.join(" , ", params);
     }
 
     private boolean addObjectIntoTable(String tableName, String ... params) throws SQLException {
         String paramsString = String.join(" , ", params);
-        String str = String.format("insert into %s values(%s)", tableName, paramsString);
-        return statement.execute(str);
+
+        return executeScript(String.format("insert into %s values(%s)", tableName, paramsString));
     }
 
-    private int deleteObjectFromTable(String tableName, String idName, String value) throws SQLException {
-        String str = String.format("delete from %s where %s = %s;", tableName, idName, value);
-        return statement.executeUpdate(str);
+    private int deleteObjectFromTable(String tableName, String idName, String value) throws SQLException, NoElementInBase {
+        DatabaseMetaData metaData = connection.getMetaData();
+        ResultSet tablesResultSet = metaData.getTables(null, null, tableName, null);
+        if (!tablesResultSet.next()) throw new NoElementInBase("No such table found in base");
+
+        PreparedStatement preparedStatement = connection.prepareStatement(String.format("delete from %s where %s = %s", tableName, idName, value));
+        int resultExecutionInt = preparedStatement.executeUpdate();
+        preparedStatement.close();
+        return resultExecutionInt;
     }
 
     public void fillStudentsBaseFromFiles(String...files) throws SQLException,IOException {
@@ -139,17 +142,32 @@ public class Connector {
         FileReader fr;
         StudentList group;
 
-        for (String iterFile : files){
+        PreparedStatement preparedStatement = connection.prepareStatement("insert into "+GROUPS_TABLE+" values(?,?)");
+        PreparedStatement preparedStatement1 = connection.prepareStatement("insert into "+STUDENTS_TABLE+" values(?,?,?,?,?)");
+        for (String iterFile : files) {
             file = new File(iterFile);
             fr = new FileReader(file);
             group = new StudentList();
             group.read(fr);
             fr.close();
-            addObjectIntoTable(GROUPS_TABLE, Integer.toString(group.getGroupID()), "''");
-            for (Student stud: group.getStudentArrayList())
-                addObjectIntoTable(STUDENTS_TABLE, Integer.toString(stud.getIdCardNumber()), "'"+stud.getName()+"'",Integer.toString(group.getGroupID()), "'"+stud.getGraduateSubscript()+"'", Double.toString(stud.getAveragePoint()));
+            preparedStatement.setInt(1,group.getGroupID());
+            preparedStatement.setInt(2,0);
+            preparedStatement.addBatch();
+            for (Student stud : group.getStudentArrayList()) {
+                preparedStatement1.setInt(1,stud.getIdCardNumber());
+                preparedStatement1.setString(2,stud.getName());
+                preparedStatement1.setInt(3,group.getGroupID());
+                preparedStatement1.setString(4, stud.getGraduateSubscript());
+                preparedStatement1.setDouble(5,stud.getAveragePoint());
+                 preparedStatement1.addBatch();
+            }
         }
 
+        preparedStatement.executeBatch();
+        preparedStatement.close();
+        preparedStatement1.executeBatch();
+        preparedStatement1.close();
+        connection.commit();
         System.out.println("Students base filled");
     }
 
@@ -159,102 +177,79 @@ public class Connector {
         Teacher teacher;
         ArrayList<Integer> ints;
 
+        PreparedStatement preparedStatement = connection.prepareStatement("insert into "+TEACHER_TABLE+" values(?,?,?,?)");
+        PreparedStatement preparedStatement1 = connection.prepareStatement("insert into "+TEACHERGROUP_TABLE+" values(?,?)");
         for (String iterFile : files){
             file = new File(iterFile);
             fr = new FileReader(file);
             teacher = new Teacher();
             ints = teacher.read(fr);
             fr.close();
-            addObjectIntoTable(TEACHER_TABLE, Integer.toString(teacher.getId()), "'"+teacher.getName()+"'", "'"+teacher.getLogin()+"'", "'"+teacher.getPassword()+"'");
+            preparedStatement.setInt(1,teacher.getId());
+            preparedStatement.setString(2,teacher.getName());
+            preparedStatement.setString(3,teacher.getLogin());
+            preparedStatement.setString(4,teacher.getPassword());
+            preparedStatement.addBatch();
+            //addObjectIntoTable(TEACHER_TABLE, Integer.toString(teacher.getId()), "'"+teacher.getName()+"'", "'"+teacher.getLogin()+"'", "'"+teacher.getPassword()+"'");
             for(Integer group : ints){
-                addObjectIntoTable(TEACHERGROUP_TABLE, group.toString(), Integer.toString(teacher.getId()));
+                preparedStatement1.setInt(1,group);
+                preparedStatement1.setInt(2,teacher.getId());
+                preparedStatement1.addBatch();
+                //addObjectIntoTable(TEACHERGROUP_TABLE, group.toString(), Integer.toString(teacher.getId()));
             }
         }
 
+        preparedStatement.executeBatch();
+        preparedStatement.close();
+        preparedStatement1.executeBatch();
+        preparedStatement1.close();
+        connection.commit();
         System.out.println("Teachers base filled");
     }
 
     public boolean addStudentAtBase(Student stud, int groupId) throws SQLException, NoElementInBase, SameIndex {
-        ResultSet result = statement.executeQuery("select * from "+STUDENTS_TABLE+" where "+STUDENT_ID+"="+ stud.getIdCardNumber());
-        if(result.next()) throw new SameIndex("There is student with same id cadr in base");
-
-        result = statement.executeQuery("select * from "+GROUPS_TABLE+" where groupid="+ groupId);
-        if(!result.next()) throw new NoElementInBase("Group id does not exist");
-
         return addObjectIntoTable(STUDENTS_TABLE, Integer.toString(stud.getIdCardNumber()), "'"+stud.getName()+"'",Integer.toString(groupId), "'"+stud.getGraduateSubscript()+"'", Double.toString(stud.getAveragePoint()));
     }
 
     public boolean addStudentAtBase(Student stud) throws SQLException, SameIndex {
-        ResultSet result = statement.executeQuery("select * from "+STUDENTS_TABLE+" where "+STUDENT_ID+"="+ stud.getIdCardNumber());
-        if(result.next()) throw new SameIndex("There is student with same id cadr in base");
         return addObjectIntoTable(STUDENTS_TABLE, Integer.toString(stud.getIdCardNumber()), "'"+stud.getName()+"'","null", "'"+stud.getGraduateSubscript()+"'", Double.toString(stud.getAveragePoint()));
     }
 
-    public boolean addTeacherAtBase(Teacher teacher) throws SQLException, NoElementInBase, SameIndex {
-        ResultSet result = statement.executeQuery("select * from "+TEACHER_TABLE+" where "+TEACHER_ID+"="+ teacher.getId());
-        if(result.next()) throw new SameIndex("There is teacher with same id in base");
-
-        String select = "select * from "+ GROUPS_TABLE+ " where groupid in (";
-        for(StudentList list : teacher.getStudentLists()){
-            select = select+list.getGroupID()+',';
-        }
-        select = select.substring(0, select.length() - 1);
-        select = select + ')';
-        result = statement.executeQuery(select);
-        if(!result.next()) throw new NoElementInBase("No such group id found in base");
-
+    public void addTeacherAtBase(Teacher teacher) throws SQLException, NoElementInBase, SameIndex {
         boolean a = addObjectIntoTable(TEACHER_TABLE, Integer.toString(teacher.getId()), "'"+teacher.getName()+"'", "'"+teacher.getLogin()+"'", "'"+teacher.getPassword()+"'");
-        for(StudentList list : teacher.getStudentLists()){
-            a = a && addGroupAtBase(list);
-        }
-        return a;
     }
 
     public boolean addGroupAtBase(StudentList studentList) throws SQLException, SameIndex {
-        ResultSet result = statement.executeQuery("select * from "+GROUPS_TABLE+" where "+GROUP_ID+"="+ studentList.getGroupID());
-        if(result.next()) throw new SameIndex("There is teacher with same id in base");
-
-       return addObjectIntoTable(GROUPS_TABLE, Integer.toString(studentList.getGroupID()), "''");
+        return addObjectIntoTable(GROUPS_TABLE, Integer.toString(studentList.getGroupID()), "''");
     }
 
     public boolean addGroupAtBase(StudentList studentList, Student president) throws SQLException, NoElementInBase, SameIndex {
-        ResultSet result = statement.executeQuery("select * from "+GROUPS_TABLE+" where GroupId="+ studentList.getGroupID());
-        if(result.next()) throw new SameIndex("There is teacher with same id in base");
-
-        result = statement.executeQuery("select * from "+STUDENTS_TABLE+" where idcardnumber="+president.getIdCardNumber());
-        if(!result.next()) throw new NoElementInBase("Group id does not exist");
-
         return addObjectIntoTable(GROUPS_TABLE, Integer.toString(studentList.getGroupID()), Integer.toString(president.getIdCardNumber()));
     }
 
     public int deleteStudentFromBase(int iDCadrNumber) throws SQLException, NoElementInBase {
-        ResultSet result = statement.executeQuery("select * from "+STUDENTS_TABLE+" where "+STUDENT_ID+"="+ iDCadrNumber);
-        if(!result.next()) throw new NoElementInBase("There is no student with id cadr in base");
         return deleteObjectFromTable(STUDENTS_TABLE,STUDENT_ID, Integer.toString(iDCadrNumber));
     }
 
     public int deleteTeacherFromBase(int id) throws SQLException, NoElementInBase {
-        ResultSet result = statement.executeQuery("select * from "+TEACHER_TABLE+" where "+TEACHER_ID+"="+ id);
-        if(result.next()) throw new NoElementInBase("There is no teacher with id in base");
         return deleteObjectFromTable(TEACHER_TABLE,TEACHER_ID, Integer.toString(id));
     }
 
     public int deleteGroupFromBase(int groupId) throws SQLException, NoElementInBase {
-        ResultSet result = statement.executeQuery("select * from "+GROUPS_TABLE+" where "+GROUP_ID+"="+  groupId);
-        if(result.next()) throw new NoElementInBase("There is no group with id cadr in base");
         return deleteObjectFromTable(GROUPS_TABLE,GROUP_ID, Integer.toString(groupId));
     }
 
     public boolean checkTeacherExistence(String login, String password) throws SQLException {
-        String select = String.format("select * from"+TEACHER_TABLE+" where login = %s and password = %s;", login, password);
-        return statement.executeQuery(select).next();
+        PreparedStatement preparedStatement = connection.prepareStatement(String.format("select * from"+TEACHER_TABLE+" where login = %s and password = %s;", login, password));
+        ResultSet result = preparedStatement.executeQuery();
+        if(result.next()) return true;
+        return false;
     }
 
     public ArrayList<StudentList> getGroupsByTeacherId(int id) throws NoElementInBase, SQLException, IOException, WrongAveragePoint {
-        ResultSet result = statement.executeQuery("select * from "+TEACHER_TABLE+" where "+TEACHER_ID+"="+ id);
-        if(!result.next()) throw new NoElementInBase("There is no teacher with id in base");
+        PreparedStatement preparedStatement = connection.prepareStatement("select * from (select * from "+TEACHERGROUP_TABLE+" where "+TEACHER_ID+" = "+id+") left join "+STUDENTS_TABLE+" using ("+GROUP_ID+")");
+        ResultSet resultTeach = preparedStatement.executeQuery();
 
-        ResultSet resultTeach = statement.executeQuery("select * from (select * from "+TEACHERGROUP_TABLE+" where "+TEACHER_ID+" = "+id+") left join "+STUDENTS_TABLE+" using ("+GROUP_ID+")");
         ArrayList<StudentList> list = new ArrayList<StudentList>();
         StudentList group;
         int n;
@@ -270,23 +265,26 @@ public class Connector {
                     group.setStudent(new Student(resultTeach.getString(4), resultTeach.getInt(3), resultTeach.getString(5), resultTeach.getDouble(6)));
             list.add(group);
         }
+        preparedStatement.close();
         return list;
     }
 
     public ArrayList<Student> getStudentsByGroupId(int id) throws SQLException, NoElementInBase, IOException, WrongAveragePoint {
-        ResultSet result = statement.executeQuery("select * from "+GROUPS_TABLE+" where "+GROUP_ID+"="+ id);
-        if(!result.next()) throw new NoElementInBase("There is no group with id in base");
+        PreparedStatement preparedStatement = connection.prepareStatement("select * from "+STUDENTS_TABLE+" where "+GROUP_ID+" = "+id);
+        ResultSet resultGroup = preparedStatement.executeQuery();
 
-        ResultSet resultGroup = statement.executeQuery("select * from "+STUDENTS_TABLE+" where "+GROUP_ID+" = "+id);
         ArrayList<Student> list = new ArrayList<>();
         while(resultGroup.next()){
             list.add(new Student(resultGroup.getString(2), resultGroup.getInt(1), resultGroup.getString(4), resultGroup.getDouble(5)));
         }
+        preparedStatement.close();
         return list;
     }
 
     public Student getStudentById(int id) throws NoElementInBase, SQLException, IOException, WrongAveragePoint {
-        ResultSet resultStud = statement.executeQuery("select * from "+STUDENTS_TABLE+" where "+STUDENT_ID+"="+ id);
+        PreparedStatement preparedStatement = connection.prepareStatement("select * from "+STUDENTS_TABLE+" where "+STUDENT_ID+"="+ id);
+        ResultSet resultStud = preparedStatement.executeQuery();
+
         if(!resultStud.next()) throw new NoElementInBase("There is no student with id in base");
 
         Student stud = new Student();
@@ -295,11 +293,14 @@ public class Connector {
         stud.setGraduateSubscript( resultStud.getString(4));
         stud.setAveragePoint( resultStud.getDouble(5));
 
+        preparedStatement.close();
         return stud;
     }
 
     public Teacher getTeacherById(int id) throws NoElementInBase, SQLException {
-        ResultSet resultTeach = statement.executeQuery("select * from "+TEACHER_TABLE+" where "+TEACHER_ID+"="+ id);
+        PreparedStatement preparedStatement = connection.prepareStatement("select * from "+TEACHER_TABLE+" where "+TEACHER_ID+"="+ id);
+        ResultSet resultTeach = preparedStatement.executeQuery();
+
         if(!resultTeach.next()) throw new NoElementInBase("There is no teacher with id in base");
 
         Teacher teacher = new Teacher();
@@ -308,14 +309,14 @@ public class Connector {
         teacher.setLogin(resultTeach.getString(3));
         teacher.setPassword(resultTeach.getString(4));
 
+        preparedStatement.close();
         return teacher;
     }
 
     public ArrayList<Teacher> getTeachersByStudentId(int id) throws NoElementInBase, SQLException, IOException {
-        ResultSet resultStud = statement.executeQuery("select * from "+STUDENTS_TABLE+" where "+STUDENT_ID+"="+ id);
-        if(!resultStud.next()) throw new NoElementInBase("There is no student with id in base");
+        PreparedStatement preparedStatement = connection.prepareStatement("select "+TEACHER_ID+", NAME, LOGIN, PASSWORD from "+TEACHER_TABLE+" left join "+TEACHERGROUP_TABLE+" using ("+TEACHER_ID+") where "+GROUP_ID+" in (select "+GROUP_ID+" from "+STUDENTS_TABLE+" where "+STUDENT_ID+"="+id+')');
+        ResultSet resultTeacher = preparedStatement.executeQuery();
 
-        ResultSet resultTeacher = statement.executeQuery("select "+TEACHER_ID+", NAME, LOGIN, PASSWORD from "+TEACHER_TABLE+" left join "+TEACHERGROUP_TABLE+" using ("+TEACHER_ID+") where "+GROUP_ID+" in (select "+GROUP_ID+" from "+STUDENTS_TABLE+" where "+STUDENT_ID+"="+id+')');
         ArrayList<Teacher> list = new ArrayList<>();
         Teacher teacher;
         while(resultTeacher.next()){
@@ -323,6 +324,7 @@ public class Connector {
             teacher.setId(resultTeacher.getInt(1));
             list.add(teacher);
         }
+        preparedStatement.close();
         return list;
     }
 }
