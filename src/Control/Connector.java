@@ -29,9 +29,6 @@ public class Connector {
     private static final String GROUP_ID = "GROUPID";
     private static final String TEACHER_ID = "ID";
 
-    private final static String  ADD_DATA_SQL     =
-            "begin sql_package.addData(?,?); end;";
-
     private final Connection connection;
 
     public Connector() throws SQLException {
@@ -61,6 +58,7 @@ public class Connector {
         PreparedStatement preparedStatement = connection.prepareStatement(script);
         boolean resultExecution = preparedStatement.execute();
         preparedStatement.close();
+        connection.commit();
 
         return resultExecution;
     }
@@ -243,6 +241,7 @@ public class Connector {
         PreparedStatement preparedStatement = connection.prepareStatement(String.format("select * from"+TEACHER_TABLE+" where login = %s and password = %s;", login, password));
         ResultSet result = preparedStatement.executeQuery();
         if(result.next()) return true;
+        preparedStatement.close();
         return false;
     }
 
