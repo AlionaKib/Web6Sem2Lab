@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0">
+    <servlet>
+        <servlet-name>resultdata</servlet-name>
+        <servlet-class>servlet.ResultFillData</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>resultdata</servlet-name>
+        <url-pattern>/result.html</url-pattern>
+    </servlet-mapping>
+    <servlet>
+        <servlet-name>resultXML</servlet-name>
+        <servlet-class>servlet.ResultXML</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>resultXML</servlet-name>
+        <url-pattern>/result.xml</url-pattern>
+    </servlet-mapping>
+</web-app>

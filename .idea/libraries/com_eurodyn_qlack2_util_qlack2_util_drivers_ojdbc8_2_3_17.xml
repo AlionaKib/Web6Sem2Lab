@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="com.eurodyn.qlack2.util:qlack2-util-drivers-ojdbc8:2.3.17" type="repository">
+    <properties maven-id="com.eurodyn.qlack2.util:qlack2-util-drivers-ojdbc8:2.3.17" />
+    <CLASSES>
+      <root url="jar://$MAVEN_REPOSITORY$/com/eurodyn/qlack2/util/qlack2-util-drivers-ojdbc8/2.3.17/qlack2-util-drivers-ojdbc8-2.3.17.jar!/" />
+      <root url="jar://$MAVEN_REPOSITORY$/javax/interceptor/javax.interceptor-api/1.2/javax.interceptor-api-1.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

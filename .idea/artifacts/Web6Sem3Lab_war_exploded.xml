@@ -1,0 +1,13 @@
+<component name="ArtifactManager">
+  <artifact type="exploded-war" name="Web6Sem3Lab:war exploded">
+    <output-path>$PROJECT_DIR$/out/artifacts/Web6Sem3Lab_war_exploded</output-path>
+    <root id="root">
+      <element id="javaee-facet-resources" facet="Web6Sem3Lab/web/Web" />
+      <element id="directory" name="WEB-INF">
+        <element id="directory" name="classes">
+          <element id="module-output" name="Web6Sem3Lab" />
+        </element>
+      </element>
+    </root>
+  </artifact>
+</component>
